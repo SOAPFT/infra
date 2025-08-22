@@ -150,6 +150,38 @@ resource "aws_iam_role_policy" "ecs_task_secrets" {
   })
 }
 
+resource "aws_iam_role_policy" "ecs_task_bedrock" {
+  name = "${var.project_name}-${var.environment}-ecs-task-bedrock"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream",
+          "bedrock:GetFoundationModel",
+          "bedrock:ListFoundationModels"
+        ]
+        Resource = [
+          "arn:aws:bedrock:${var.region}::foundation-model/anthropic.claude-3-5-sonnet-*",
+          "arn:aws:bedrock:${var.region}::foundation-model/anthropic.claude-*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:GetUsage",
+          "bedrock:GetModelUsage"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 data "aws_iam_policy_document" "github_actions_assume_role" {
   count = var.enable_github_actions ? 1 : 0
 
