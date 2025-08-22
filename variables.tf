@@ -24,13 +24,13 @@ variable "availability_zones" {
 variable "database_name" {
   description = "RDS database name"
   type        = string
-  default     = "soapftdb"
+  default     = "soapft_dev_db"
 }
 
 variable "database_username" {
   description = "RDS master username"
   type        = string
-  default     = "admin"
+  default     = "soapft_admin"
 }
 
 variable "database_password" {
