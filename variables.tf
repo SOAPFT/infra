@@ -42,7 +42,7 @@ variable "database_password" {
 variable "container_port" {
   description = "Container port"
   type        = number
-  default     = 3000
+  default     = 7777
 }
 
 variable "container_cpu" {
@@ -79,4 +79,16 @@ variable "enable_https" {
   description = "Enable HTTPS with ACM certificate"
   type        = bool
   default     = true
+}
+
+variable "use_ec2" {
+  description = "Use EC2 instead of Fargate for ECS"
+  type        = bool
+  default     = true
+}
+
+variable "key_pair_name" {
+  description = "EC2 Key Pair name for SSH access (optional)"
+  type        = string
+  default     = null
 }
