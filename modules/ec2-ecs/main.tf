@@ -3,15 +3,7 @@ resource "aws_security_group" "ec2_ecs" {
   name_prefix = "${var.project_name}-${var.environment}-ec2-ecs-"
   vpc_id      = var.vpc_id
 
-  # SSH 접근
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # 실제 운영시에는 특정 IP로 제한 권장
-  }
-
-  # 컨테이너 포트 (ALB에서 접근)
+  # ALB에서 접근하는 컨테이너 포트
   ingress {
     from_port       = var.container_port
     to_port         = var.container_port
@@ -19,7 +11,7 @@ resource "aws_security_group" "ec2_ecs" {
     security_groups = [var.alb_security_group_id]
   }
 
-  # 동적 포트 범위 (ECS 작업용)
+  # ECS 작업 동적 포트 범위
   ingress {
     from_port       = 32768
     to_port         = 65535
@@ -39,23 +31,7 @@ resource "aws_security_group" "ec2_ecs" {
   }
 }
 
-# RDS 보안 그룹에 EC2 인스턴스 접근 규칙 추가
-resource "aws_security_group_rule" "ec2_to_rds" {
-  type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.ec2_ecs.id
-  security_group_id        = data.aws_security_groups.rds.ids[0]
-}
-
-# RDS 보안 그룹 찾기
-data "aws_security_groups" "rds" {
-  filter {
-    name   = "tag:Name"
-    values = ["${var.project_name}-${var.environment}-rds-sg"]
-  }
-}
+# RDS 접근 규칙은 networking 모듈에서 CIDR 블록으로 관리됨
 
 # ECS 최적화된 AMI 데이터 소스
 data "aws_ami" "ecs_optimized" {
@@ -73,7 +49,7 @@ data "aws_ami" "ecs_optimized" {
   }
 }
 
-# IAM 역할 - EC2 인스턴스용
+# EC2 인스턴스용 IAM 역할
 resource "aws_iam_role" "ec2_ecs_instance_role" {
   name = "${var.project_name}-${var.environment}-ec2-ecs-instance-role"
 
