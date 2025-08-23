@@ -77,6 +77,12 @@ resource "aws_iam_role_policy_attachment" "ec2_ecs_instance_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
+# SSM Session Manager 정책 연결
+resource "aws_iam_role_policy_attachment" "ec2_ssm_managed_instance_core" {
+  role       = aws_iam_role.ec2_ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 # IAM 인스턴스 프로파일
 resource "aws_iam_instance_profile" "ec2_ecs_instance_profile" {
   name = "${var.project_name}-${var.environment}-ec2-ecs-instance-profile"
