@@ -30,3 +30,9 @@ variable "container_port" {
   type        = number
   default     = 3000
 }
+
+variable "ec2_security_group_id" {
+  description = "EC2 ECS security group ID for RDS access"
+  type        = string
+  default     = ""
+}
