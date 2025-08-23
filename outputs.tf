@@ -19,8 +19,8 @@ output "s3_bucket_name" {
 }
 
 output "rds_endpoint" {
-  value       = module.rds.cluster_endpoint
-  description = "RDS cluster endpoint"
+  value       = module.rds.endpoint
+  description = "RDS endpoint"
 }
 
 output "database_secret_arn" {

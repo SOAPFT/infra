@@ -34,11 +34,6 @@ variable "database_password" {
   sensitive   = true
 }
 
-variable "instance_count" {
-  description = "Number of Aurora instances"
-  type        = number
-  default     = 1
-}
 
 variable "skip_final_snapshot" {
   description = "Skip final snapshot when destroying"
