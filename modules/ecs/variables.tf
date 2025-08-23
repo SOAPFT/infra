@@ -103,3 +103,15 @@ variable "secrets" {
   }))
   default = []
 }
+
+variable "use_ec2" {
+  description = "Use EC2 instead of Fargate"
+  type        = bool
+  default     = false
+}
+
+variable "ec2_capacity_provider_name" {
+  description = "EC2 capacity provider name"
+  type        = string
+  default     = ""
+}

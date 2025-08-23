@@ -14,12 +14,12 @@ resource "aws_ecs_cluster" "main" {
 resource "aws_ecs_cluster_capacity_providers" "main" {
   cluster_name = aws_ecs_cluster.main.name
 
-  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+  capacity_providers = var.use_ec2 ? [var.ec2_capacity_provider_name] : ["FARGATE", "FARGATE_SPOT"]
 
   default_capacity_provider_strategy {
     base              = 1
     weight            = 100
-    capacity_provider = "FARGATE_SPOT"
+    capacity_provider = var.use_ec2 ? var.ec2_capacity_provider_name : "FARGATE_SPOT"
   }
 }
 
@@ -33,15 +33,60 @@ resource "aws_cloudwatch_log_group" "ecs" {
 }
 
 resource "aws_ecs_task_definition" "main" {
-  family                   = "${var.project_name}-${var.environment}"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = var.container_cpu
-  memory                   = var.container_memory
+  family                   = "${var.project_name}-${var.environment}-v2"
+  network_mode             = var.use_ec2 ? "bridge" : "awsvpc"
+  requires_compatibilities = var.use_ec2 ? ["EC2"] : ["FARGATE"]
+  cpu                      = var.use_ec2 ? null : var.container_cpu
+  memory                   = var.use_ec2 ? null : var.container_memory
   execution_role_arn       = var.ecs_task_execution_role_arn
   task_role_arn           = var.ecs_task_role_arn
 
-  container_definitions = jsonencode([
+  container_definitions = var.use_ec2 ? jsonencode([
+    {
+      name  = "${var.project_name}-${var.environment}"
+      image = "${var.ecr_repository_url}:latest"
+      
+      memory = var.container_memory
+
+      portMappings = [
+        {
+          containerPort = var.container_port
+          hostPort      = 0
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "NODE_ENV"
+          value = var.environment
+        },
+        {
+          name  = "PORT"
+          value = tostring(var.container_port)
+        }
+      ]
+
+      secrets = var.secrets
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ]) : jsonencode([
     {
       name  = "${var.project_name}-${var.environment}"
       image = "${var.ecr_repository_url}:latest"
@@ -110,7 +155,7 @@ resource "aws_lb_target_group" "main" {
   port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "ip"
+  target_type = var.use_ec2 ? "instance" : "ip"
 
   health_check {
     enabled             = true
@@ -183,15 +228,18 @@ resource "aws_ecs_service" "main" {
   desired_count   = var.desired_count
 
   capacity_provider_strategy {
-    capacity_provider = "FARGATE_SPOT"
+    capacity_provider = var.use_ec2 ? var.ec2_capacity_provider_name : "FARGATE_SPOT"
     weight            = 100
     base              = 0
   }
 
-  network_configuration {
-    security_groups  = [var.ecs_tasks_security_group_id]
-    subnets          = var.private_subnet_ids
-    assign_public_ip = false
+  dynamic "network_configuration" {
+    for_each = var.use_ec2 ? [] : [1]
+    content {
+      security_groups  = [var.ecs_tasks_security_group_id]
+      subnets          = var.private_subnet_ids
+      assign_public_ip = false
+    }
   }
 
   load_balancer {
