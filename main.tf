@@ -45,6 +45,20 @@ module "s3_cloudfront" {
   allowed_origins = ["*"]
 }
 
+module "bastion" {
+  count  = var.enable_bastion ? 1 : 0
+  source = "./modules/bastion"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  vpc_id            = module.networking.vpc_id
+  public_subnet_ids = module.networking.public_subnet_ids
+  key_pair_name     = var.key_pair_name
+  rds_endpoint_host = split(":", module.rds.endpoint)[0]
+  database_username = var.database_username
+  database_name     = var.database_name
+}
+
 module "acm" {
   count  = var.enable_https ? 1 : 0
   source = "./modules/acm"
@@ -91,7 +105,7 @@ module "ecs" {
   container_memory             = var.container_memory
   desired_count                = var.desired_count
   certificate_arn              = var.enable_https ? module.acm[0].certificate_arn : ""
-  use_ec2                      = var.use_ec2
+  use_ec2                      = false
   ec2_capacity_provider_name   = var.use_ec2 ? module.ec2_ecs[0].capacity_provider_name : ""
 
   secrets = [
