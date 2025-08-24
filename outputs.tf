@@ -38,3 +38,18 @@ output "ecs_service_name" {
   value       = module.ecs.service_name
   description = "ECS service name"
 }
+
+output "bastion_public_ip" {
+  value       = var.enable_bastion ? module.bastion[0].bastion_public_ip : null
+  description = "Bastion host public IP"
+}
+
+output "bastion_ssh_command" {
+  value       = var.enable_bastion ? module.bastion[0].ssh_command : null
+  description = "SSH command to connect to bastion host"
+}
+
+output "rds_port_forward_command" {
+  value       = var.enable_bastion ? module.bastion[0].port_forward_command : null
+  description = "SSH port forwarding command for RDS access"
+}

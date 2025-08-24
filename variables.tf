@@ -81,6 +81,12 @@ variable "enable_https" {
   default     = true
 }
 
+variable "enable_bastion" {
+  description = "Enable bastion host for database access"
+  type        = bool
+  default     = false
+}
+
 variable "use_ec2" {
   description = "Use EC2 instead of Fargate for ECS"
   type        = bool
