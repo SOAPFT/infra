@@ -33,20 +33,9 @@ resource "aws_security_group" "ec2_ecs" {
 
 # RDS 접근 규칙은 networking 모듈에서 CIDR 블록으로 관리됨
 
-# ECS 최적화된 AMI 데이터 소스
-data "aws_ami" "ecs_optimized" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+# ECS AMI
+data "aws_ssm_parameter" "ecs_al2_image_id" {
+  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
 }
 
 # EC2 인스턴스용 IAM 역할
@@ -96,7 +85,7 @@ resource "aws_iam_instance_profile" "ec2_ecs_instance_profile" {
 # Launch Template
 resource "aws_launch_template" "ec2_ecs" {
   name_prefix   = "${var.project_name}-${var.environment}-ec2-ecs-"
-  image_id      = data.aws_ami.ecs_optimized.id
+  image_id      = data.aws_ssm_parameter.ecs_al2_image_id.value
   instance_type = "t3.micro"
 
   vpc_security_group_ids = [aws_security_group.ec2_ecs.id]
@@ -106,6 +95,12 @@ resource "aws_launch_template" "ec2_ecs" {
   }
 
   key_name = var.key_pair_name  # SSH 키 페어 (옵션)
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "optional"  # 문제 해결 후 "required"로 복원 권장
+    http_put_response_hop_limit = 2
+  }
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
     cluster_name = var.cluster_name
