@@ -6,7 +6,7 @@ SOAPFT 서비스의 AWS 인프라를 Terraform으로 정의한 코드입니다.
 
 ## Diagram
 
-![image](https://nullisdefined.s3.ap-northeast-2.amazonaws.com/images/18d52b95cbd05768a72325cdd36203cd.png)
+![image](https://nullisdefined.s3.ap-northeast-2.amazonaws.com/images/e8b65eb7b59f8ce60fcada778161c482.png)
 
 ## 구성 개요
 
